@@ -1,0 +1,44 @@
+services:
+  mysql:
+    image: docker.1ms.run/mysql:8.0
+    container_name: store-mysql
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-connect='SET NAMES utf8mb4'
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: store_db
+      MYSQL_USER: storeuser
+      MYSQL_PASSWORD: storepassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infrastructure/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: docker.1ms.run/redis:7.0-alpine
+    container_name: store-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: docker.1ms.run/prom/prometheus
+    container_name: store-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: docker.1ms.run/grafana/grafana
+    container_name: store-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+volumes:
+  mysql_data:
